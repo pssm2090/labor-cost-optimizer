@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SmartStay — Labor Cost Optimizer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0a0a2e;
+      color: #e0e0ff;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(90deg, #000048, #1a1a6e);
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 2px solid #00c8ff;
+    }
+    header h1 { font-size: 1.4rem; color: #fff; }
+    header span { font-size: 0.85rem; color: #00c8ff; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
+
+    .card {
+      background: #0d0d3d;
+      border: 1px solid #1e1e6e;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .card h2 {
+      font-size: 1rem; color: #00c8ff;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    label { display: block; font-size: 0.8rem; color: #9090cc; margin-bottom: 6px; }
+
+    input[type="number"], select {
+      width: 100%;
+      padding: 10px 14px;
+      background: #12124a;
+      border: 1px solid #2a2a7a;
+      border-radius: 8px;
+      color: #e0e0ff;
+      font-size: 0.95rem;
+    }
+    input[type="number"]:focus, select:focus {
+      outline: none;
+      border-color: #00c8ff;
+    }
+
+    .chip-section-label {
+      font-size: 0.8rem;
+      color: #9090cc;
+      margin-bottom: 8px;
+      margin-top: 18px;
+    }
+    .chip-section-sublabel {
+      font-size: 0.72rem;
+      color: #5555aa;
+      margin-bottom: 6px;
+    }
+
+    .events-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+
+    .event-chip {
+      display: flex; align-items: center; gap: 6px;
+      background: #12124a;
+      border: 1px solid #2a2a7a;
+      border-radius: 20px;
+      padding: 7px 15px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .event-chip input { display: none; }
+    .event-chip.selected {
+      background: #00306e;
+      border-color: #00c8ff;
+      color: #00c8ff;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #1e1e6e;
+      margin: 14px 0;
+    }
+
+    .btn-run {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(90deg, #0057b8, #00c8ff);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: opacity 0.2s;
+    }
+    .btn-run:hover { opacity: 0.88; }
+    .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #results { display: none; }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi {
+      background: #0d0d3d;
+      border: 1px solid #1e1e6e;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .kpi .val { font-size: 2rem; font-weight: 700; color: #00c8ff; }
+    .kpi .lbl { font-size: 0.78rem; color: #9090cc; margin-top: 4px; }
+    .kpi.risk-high .val { color: #ff4d4d; }
+    .kpi.risk-med  .val { color: #ffaa00; }
+    .kpi.risk-low  .val { color: #00e676; }
+
+    .dept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .dept-card {
+      background: #12124a;
+      border: 1px solid #2a2a7a;
+      border-radius: 10px;
+      padding: 16px 12px;
+      text-align: center;
+    }
+    .dept-card .dept-name  { font-size: 0.75rem; color: #9090cc; margin-bottom: 8px; }
+    .dept-card .dept-count { font-size: 1.8rem; font-weight: 700; color: #ffffff; }
+    .dept-card .dept-unit  { font-size: 0.7rem; color: #5555aa; }
+
+    .rec-box {
+      background: #081830;
+      border-left: 3px solid #00c8ff;
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 0.9rem;
+      color: #c0c0ee;
+      line-height: 1.6;
+    }
+
+    .active-flags {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+    }
+    .flag-badge {
+      background: #001a40;
+      border: 1px solid #00c8ff;
+      color: #00c8ff;
+      border-radius: 12px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+    }
+
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #00c8ff;
+      font-size: 0.9rem;
+    }
+    .error-box {
+      display: none;
+      background: #2a0000;
+      border: 1px solid #ff4d4d;
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #ff9999;
+      font-size: 0.85rem;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🏨 SmartStay Labor Cost Optimizer</h1>
+    <span>AI-Powered Staffing Recommendation Engine — Powered by Spring Boot</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- INPUT CARD -->
+  <div class="card">
+    <h2>📋 Hotel Input Parameters</h2>
+
+    <div class="form-grid">
+      <div>
+        <label>Occupancy % (today's forecast)</label>
+        <input type="number" id="occupancy" min="0" max="100" value="75" />
+      </div>
+      <div>
+        <label>Total Hotel Rooms</label>
+        <input type="number" id="rooms" min="1" value="200" />
+      </div>
+      <div>
+        <label>Restaurant Covers (F&amp;B bookings today)</label>
+        <input type="number" id="covers" min="0" value="120" />
+      </div>
+      <div>
+        <label>Shift</label>
+        <select id="shift">
+          <option value="morning">Morning (6am – 2pm)</option>
+          <option value="afternoon">Afternoon (2pm – 10pm)</option>
+          <option value="night">Night (10pm – 6am)</option>
+        </select>
+      </div>
+      <div>
+        <label>Hotel Tier</label>
+        <select id="hotelTier">
+          <option value="budget">Budget (1–2 Star)</option>
+          <option value="midscale" selected>Midscale (3 Star)</option>
+          <option value="upscale">Upscale (4 Star)</option>
+          <option value="luxury">Luxury (5 Star)</option>
+        </select>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ON-PROPERTY EVENTS -->
+    <div class="chip-section-label">🏨 On-Property Events</div>
+    <div class="chip-section-sublabel">Events happening inside the hotel today</div>
+    <div class="events-row">
+      <label class="event-chip">
+        <input type="checkbox" value="wedding" /> 💍 Wedding
+      </label>
+      <label class="event-chip">
+        <input type="checkbox" value="conference" /> 🎤 Conference / MICE
+      </label>
+      <label class="event-chip">
+        <input type="checkbox" value="festival" /> 🪔 Festival Celebration
+      </label>
+    </div>
+
+    <!-- SPECIAL CIRCUMSTANCES -->
+    <div class="chip-section-label" style="margin-top:14px">⚡ Special Circumstances</div>
+    <div class="chip-section-sublabel">External or exceptional factors affecting today's demand</div>
+    <div class="events-row">
+      <label class="event-chip">
+        <input type="checkbox" value="vip" /> 👑 VIP / Celebrity Guest
+      </label>
+      <label class="event-chip">
+        <input type="checkbox" value="cityEvent" /> 🏟️ City Event (IPL / Concert / Rally)
+      </label>
+      <label class="event-chip">
+        <input type="checkbox" value="longWeekend" /> 📅 Long Weekend
+      </label>
+    </div>
+
+    <button class="btn-run" id="btnRun" onclick="getRecommendation()">
+      ⚡ Get Staffing Recommendation
+    </button>
+    <div class="loader" id="loader">⏳ Calculating optimal staffing plan...</div>
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <div class="summary-strip">
+      <div class="kpi" id="kpiTotal">
+        <div class="val" id="valTotal">—</div>
+        <div class="lbl">Total Recommended Staff</div>
+      </div>
+      <div class="kpi" id="kpiSavings">
+        <div class="val" id="valSavings">—</div>
+        <div class="lbl">Est. Cost Savings vs Unplanned</div>
+      </div>
+      <div class="kpi" id="kpiRisk">
+        <div class="val" id="valRisk">—</div>
+        <div class="lbl">Overtime Risk Level</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>👥 Department-wise Staffing Plan</h2>
+      <div class="dept-grid" id="deptGrid"></div>
+      <div class="active-flags" id="activeFlags"></div>
+    </div>
+
+    <div class="card">
+      <h2>💡 Recommendation Summary</h2>
+      <div class="rec-box" id="recBox"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
